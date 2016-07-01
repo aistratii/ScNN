@@ -1,19 +1,24 @@
-import scala.collection.mutable.IndexedSeqView
+import scala.collection.mutable.{IndexedSeqView, ListBuffer}
 
-class NN(width: Int, height: Int) {
+class NN(width: Int, height: Int, inputLength: Int) {
   var step: Double = 0.001
   var length: Int = 10
   var displacement = 0
 
-  val nodeValues: Array[Array[Double]] =
-    Array.ofDim[Double](width, height)
-
-
-  val weights: Array[Array[Double]] =
-    Array.ofDim[Double](width, height).
-      map( line =>
-        line.map(_=>0.5)
-      )
+  val nodeValues: Array[Array[ListBuffer[Double]]] =
+    Array.ofDim[Double](width, height).map(e=> e.map( el => new ListBuffer[Double]))
+  nodeValues.foreach(
+    line => line.foreach(
+      list =>
+        for (i <- 0 until height*height)
+          list += 0.5
+    )
+  )
+  nodeValues (0).foreach( e =>{
+    e.clear()
+    for(i <- 0 until inputLength*height)
+      e += 0.5
+  })
 
 
   def train(input: Array[Byte]):Unit = {
@@ -24,8 +29,22 @@ class NN(width: Int, height: Int) {
   private def getResultFor(input: Array[Byte]) = {
     val arrayTmp: Array[Array[Double]] = Array.ofDim[Double](width, height)
 
-    val first = for (j <- 0 to height; i <- 0 to input.length) yield input(i) * weights(j)(0)
-    println(first)
+    //fill first layer
+    for (i <- 0 until input.length){
+      arrayTmp(0)(i) = input(i)
+    }
+
+
+    arrayTmp.foreach({ e =>
+      e.foreach(println)
+      println
+    })
+
+
+  }
+
+  private def reduceToSums(array: IndexedSeq[Double]) = {
+
   }
 
   private def sigmoidFunction(in: Double) = {
