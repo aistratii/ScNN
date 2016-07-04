@@ -5,5 +5,5 @@ import scala.collection.mutable.ListBuffer
   */
 class Node {
   var value: Double = 0.5
-  val connectedNodes: ListBuffer[Double] = new ListBuffer[Double]
+  val weights: ListBuffer[Double] = new ListBuffer[Double]
 }
