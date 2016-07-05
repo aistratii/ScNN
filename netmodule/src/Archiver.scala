@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
   * Created by aistratii on 05-07-2016.
   */
 class Archiver(file: String,
-               chunkReadSize: Int = 1000,
+               chunkMaxSize: Int = 5,
                inputSize: Int = 10,
                outputSize: Int = 1,
                width: Int = 5,
@@ -16,14 +16,13 @@ class Archiver(file: String,
   private val net: NN = new NN(width, height, inputSize, outputSize)
 
   def compress: Unit = {
+    println("Compressing...")
     lazy val source = Source.fromFile(file).map(_.toByte)
     var chunk = nextChunk(source)
-    var numberOfCorectAproximations = 0
-    val size = source.size
     var displacement = 0
 
-    while(numberOfCorectAproximations < min(size, chunkReadSize)){
-      (0 until chunk.length).toStream.takeWhile( i => {
+    while(displacement < chunk.size - outputSize ){
+      (0 until chunk.length - inputSize).takeWhile( i => {
 
         val input = (for (i <- displacement until displacement + inputSize)
           yield chunk(i)).toArray
@@ -31,27 +30,35 @@ class Archiver(file: String,
         val output = (for (i <- displacement + inputSize until displacement + inputSize + outputSize)
           yield chunk(i)).toArray
 
+        //println(output.toList)
+
         val response = net.improve(input, output)
 
         if (response)
-          numberOfCorectAproximations+=1
+          displacement += 1
         else
-          numberOfCorectAproximations = 0
+          displacement = 0
 
-        println(numberOfCorectAproximations)
+
+        println(displacement)
+
+        println(net.getError(output))
+        //Thread.sleep(300)
         response
       })
-      }
     }
+  }
 
   private def nextChunk(source: Iterator[Byte]) = {
     val response = new ListBuffer[Byte]
-    (0 until min(source.size, chunkReadSize)).
-      takeWhile(_ => source.nonEmpty).
-      foreach(_ => response += source.next())
+    (0 until chunkMaxSize).
+      takeWhile(_ => {
+        response += source.next()
+        source.hasNext
+      })
 
-    /*(for(i <- 0 until chunkReadSize)
-      yield source.next()).toArray[Byte]*/
+    println(s"next chunk: ${response.map(_.toChar)}")
+
     response.toArray[Byte]
   }
 

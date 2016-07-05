@@ -1,8 +1,8 @@
 import scala.collection.mutable.{ListBuffer, Queue}
 
 class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
-  var step: Double = 0.001
-  val errorThreshold = 0.2
+  var step: Double = 0.0001
+  val errorThreshold = 0.3
   val nodes: ListBuffer[ListBuffer[Node]] = new ListBuffer[ListBuffer[Node]]
   val weightQueue: Queue[(Int, Int, Int)] = new Queue
 
@@ -43,7 +43,7 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
 
 
   /**
-    * Returns true in case if net can construxt the expected result,
+    * Returns true in case if net can construt the expected result,
     * otherwise it's false.
     * @param input
     * @param output
@@ -83,16 +83,21 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
     val newError = getError(output)
     if (newError > oldError){
       nodes(wgtCrds._1)(wgtCrds._2).weights(wgtCrds._3) = oldWeight - step
+      //step /= 2
 
       //if it doesn't improve, revert
       if (getError(output) > oldError){
         nodes(wgtCrds._1)(wgtCrds._2).weights(wgtCrds._3) = oldWeight
+        step /= 2
         println("Haven't improved")
-      }
+      } else step *= 2
     }
+    else step *= 2
+    //println(s"step $step")
   }
 
-  private def aproximate: Unit = {
+
+  /*private def aproximate: Unit = {
     for ( i <- 0 until nodes(width+1).length ){
       val node = nodes(width +1)(i)
 
@@ -103,7 +108,8 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
       else if (dif(0) < errorThreshold)
         node.value = 0
     }
-  }
+  }*/
+
 
   private def recalculateNet: Unit = {
     for( i <- 1 until width +2;
@@ -119,20 +125,26 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
     //aproximate
   }
 
-  private def getError(output: Array[Double]): Double = {
+
+  def getError(output: Array[Double]): Double = {
     recalculateNet
 
     (for ( i <- 0 until nodes(width +1).length )
       yield
-        Math.abs(nodes(width +1)(i).value - output(i))).
+        Math.abs(
+          Math.abs(nodes(width +1)(i).value) - Math.abs(output(i)))
+      ).
       sum
   }
+
 
   def isAcceptable(output: Array[Double]): Boolean =
     getError(output) < errorThreshold
 
+
   private def sigmoidFunction(in: Double) = {
-    1.0 / ( 1.0 + Math.pow(Math.E, -in))
+    //1.0 / ( 1.0 + Math.pow(Math.E, -in))
+    in
   }
 }
 ///010101010100101001010101
