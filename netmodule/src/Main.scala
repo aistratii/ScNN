@@ -15,5 +15,9 @@ object Main{
       println(error)
       error = nn.getError(output)
     }*/
+
+    val archiver = new Archiver("C:\\Users\\aistratii\\desktop\\in.txt",
+      inputSize = 2)
+    archiver.compress
 	}
 }

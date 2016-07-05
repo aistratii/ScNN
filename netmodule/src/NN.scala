@@ -56,7 +56,10 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
       tryDescend(output)
       false
     }
-    else true
+    else {
+      nodes(width +1).foreach(e => println(e.value))
+      true
+    }
   }
 
 
