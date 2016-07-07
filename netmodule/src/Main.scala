@@ -17,8 +17,8 @@ object Main{
     }*/
 
     val archiver = new Archiver("C:\\Users\\aistratii\\Desktop\\in.txt",
-      width = 5,
-      height = 5,
+      width = 10,
+      height = 3,
       inputSize = 2)
     archiver.compress
 	}

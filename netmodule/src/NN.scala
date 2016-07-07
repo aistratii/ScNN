@@ -1,10 +1,11 @@
 import scala.collection.mutable.{ListBuffer, Queue}
 
 class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
-  var step: Double = 0.0001
+  var step: Double = 0.1
   val errorThreshold = 0.3
   val nodes: ListBuffer[ListBuffer[Node]] = new ListBuffer[ListBuffer[Node]]
   val weightQueue: Queue[(Int, Int, Int)] = new Queue
+  val displacementNode = new Node
 
 
   private def buildNetStructure: Unit = {
@@ -36,11 +37,19 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
     (for (i <- 1 until width + 2;
           j <- 0 until nodes(i).length;
           k <- 0 until nodes(i)(j).weights.length)
-      yield (i, j, k)).toList.
+      yield (i, j, k)).
+      toList.
       foreach( e => weightQueue += e)
   }
   initWeightQueue
 
+  private def insertDisplacementNode: Unit = {
+    nodes(0) += displacementNode
+    nodes(1).foreach( node => {
+      node.weights += 1
+    })
+  }
+  insertDisplacementNode
 
   /**
     * Returns true in case if net can construt the expected result,
@@ -49,23 +58,41 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
     * @param output
     * @return
     */
-  def improve(input: Array[Double], output: Array[Double]): Boolean = {
-    fillInputLayer(input)
+  def improve(input: Array[Double], output: Array[Double], displacement: Int): Boolean = {
+    fillInputLayer(input, displacement)
+    print("input: ")
+    nodes(0).foreach(e => print(e.value +" "))
+    println
 
     if (getError(output) > errorThreshold){
+      print("x Not Accetable!: ")
+      nodes(width +1).foreach(e => print(e.value +" "))
+      println
+      print("should be: ")
+      output.foreach(e => print(e +" "))
+      println
+
+
       tryDescend(output)
       false
     }
     else {
-      nodes(width +1).foreach(e => println(e.value))
+      print("o Acceptable!: ")
+      nodes(width +1).foreach(e => print(e.value +" "))
+      println
+      print("should be: ")
+      output.foreach(e => print(e +" "))
+      println
       true
     }
   }
 
 
-  private def fillInputLayer(input: Array[Double]): Unit = {
+  private def fillInputLayer(input: Array[Double], displacement: Int): Unit = {
     for ( i <- 0 until input.length )
       nodes(0)(i).value = input(i)
+
+    displacementNode.value = displacement
   }
 
 
@@ -76,23 +103,23 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
     val oldWeight = nodes(wgtCrds._1)(wgtCrds._2).weights(wgtCrds._3)
     val oldError = getError(output)
 
+
     //try for first increase/decrease
     nodes(wgtCrds._1)(wgtCrds._2).weights(wgtCrds._3) += step
 
-    //try for second increase/decrease
     val newError = getError(output)
     if (newError > oldError){
+      //try for second increase/decrease
       nodes(wgtCrds._1)(wgtCrds._2).weights(wgtCrds._3) = oldWeight - step
-      //step /= 2
 
       //if it doesn't improve, revert
       if (getError(output) > oldError){
         nodes(wgtCrds._1)(wgtCrds._2).weights(wgtCrds._3) = oldWeight
-        step /= 2
+        //step /= 2
         println("Haven't improved")
-      } else step *= 2
+      } //else step *= 2
     }
-    else step *= 2
+    //else step *= 2
     //println(s"step $step")
   }
 
@@ -112,15 +139,17 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
 
 
   private def recalculateNet: Unit = {
-    for( i <- 1 until width +2;
-         j <- 0 until nodes(i).length)
-      nodes(i)(j).value = (
-        for( k <- 0 until nodes(i)(j).weights.length)
-          yield
-            sigmoidFunction(
-              nodes(i-1)(k).value * nodes(i)(j).weights(k)
-            )
-        ).sum
+    val sum =
+      for( i <- 1 until nodes.length;
+           j <- 0 until nodes(i).length)
+              nodes(i)(j).value =
+                sigmoidFunction((
+                  for( k <- 0 until nodes(i)(j).weights.length)
+                    yield
+                      nodes(i-1)(k).value * nodes(i)(j).weights(k)
+                  ).
+                  sum
+                )
 
     //aproximate
   }
@@ -143,8 +172,7 @@ class NN(width: Int, height: Int, inputLength: Int, outputLength: Int) {
 
 
   private def sigmoidFunction(in: Double) = {
-    //1.0 / ( 1.0 + Math.pow(Math.E, -in))
-    in
+    1.0 / ( 1.0 + Math.pow(Math.E, -in))
+    //in
   }
 }
-///010101010100101001010101
